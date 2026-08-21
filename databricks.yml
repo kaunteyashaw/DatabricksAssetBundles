@@ -1,0 +1,52 @@
+# This is a Declarative Automation Bundle definition for dabtutorial.
+# See https://docs.databricks.com/dev-tools/bundles/index.html for documentation.
+bundle:
+  name: dabtutorial
+  uuid: 9f1c12cc-1d61-4f2d-b3d1-87e4ad845ba5
+
+include:
+  - resources/*.yml
+  - resources/*/*.yml
+
+artifacts:
+  python_artifact:
+    type: whl
+    build: uv build --wheel
+
+
+# Variable declarations. These variables are assigned in the dev/prod targets below.
+variables:
+  catalog:
+    description: The catalog to use
+  schema:
+    description: The schema to use
+
+targets:
+  dev:
+    # The default target uses 'mode: development' to create a development copy.
+    # - Deployed resources get prefixed with '[dev my_user_name]'
+    # - Any job schedules and triggers are paused by default.
+    # See also https://docs.databricks.com/dev-tools/bundles/deployment-modes.html.
+    mode: development
+    default: true
+    presets:
+      name_prefix: dev_${workspace.current_user.short_name}_
+      source_linked_deployment: false  
+    workspace:
+      host: https://dbc-e3a5167a-d715.cloud.databricks.com
+    variables:
+      catalog: assetbundles
+      schema: ${workspace.current_user.short_name}
+  prod:
+    mode: production
+    workspace:
+      host: https://dbc-e3a5167a-d715.cloud.databricks.com
+      # We explicitly deploy to /Workspace/Users/connect.kaunteyashaw@gmail.com to make sure we only have a single copy.
+      root_path: /Workspace/Users/connect.kaunteyashaw@gmail.com/PROD/.bundle/${bundle.name}/${bundle.target}
+    variables:
+      catalog: assetbundles
+      schema: prod
+    permissions:
+      - user_name: connect.kaunteyashaw@gmail.com
+      # - group_name: admins
+        level: CAN_MANAGE
